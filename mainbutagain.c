@@ -11,9 +11,10 @@ int ADCSingleRead();
 //void SendRequest();
 //void ReceiveRequest();
 
-int const big_thresh_max = 23;
-int const thresh_max = 13;
-int const thresh_min = 3;
+int const big_thresh_max = 1050; //highest resistor results in 1100
+int const thresh_max = 950; // mid resistor is 1000
+int const thresh_min = 800; // lowest resistor is 900
+float initial_ADC = 0;
 int ADC_reading = 0;
 char state = 0;
 char send_confirm = 0;
@@ -36,7 +37,8 @@ int main(void){
         switch(state){
         case 0:{ //read
             LEDSolid(); // Makes the LED Solid
-            ADC_reading = ADCSingleRead(); // Single read from ADC and return its value
+            initial_ADC = ADCSingleRead();
+            ADC_reading = initial_ADC * 100;
             //ADC_reading = 12; //temp to cylce
             __delay_cycles(3000000);         // Delay for 3000000*(1/MCLK)=3s
             if ((ADC_reading > thresh_min) && (ADC_reading < thresh_max)){
@@ -54,7 +56,8 @@ int main(void){
         case 2:{ //receive
             send_confirm = 0; // Reset send_confirm
             LEDFast(); // Makes the led blink quickly
-            ADC_reading = ADCSingleRead();
+            initial_ADC = ADCSingleRead();
+            ADC_reading = initial_ADC * 100;
             //ADC_reading = 20; //temp to cycle
             __delay_cycles(3000000);          // Delay for 3000000*(1/MCLK)=3s
             if ((ADC_reading > thresh_max) && (ADC_reading < big_thresh_max)){
@@ -77,8 +80,11 @@ void GPIO(){
     P2OUT &= ~BIT2;  // Secondary output - if needed
     P2DIR |= BIT2;
 
-    P2OUT |= BIT3;   // ADC input
-    P2DIR &= ~BIT3;
+    //P2OUT |= BIT3;   // ADC input
+    //P2DIR &= ~BIT3;
+
+    P1SEL0 |= BIT1;                         // Select P1.1 as OA0O function
+    P1SEL1 |= BIT1;                         // OA is used as buffer for DAC
 
     P1OUT &= ~BIT7;   // Transmit Port
     P1DIR |= BIT7;
