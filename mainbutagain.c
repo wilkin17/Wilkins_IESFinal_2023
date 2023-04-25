@@ -7,14 +7,14 @@ void LEDSlow();
 void LEDFast();
 void timerInit();
 void ADCInit();
-float ADCSingleRead();
+int ADCSingleRead();
 //void SendRequest();
 //void ReceiveRequest();
 
-float const big_thresh_max = 2.3;
-float const thresh_max = 1.3;
-float const thresh_min = 0.3;
-float ADC_reading = 0;
+int const big_thresh_max = 23;
+int const thresh_max = 13;
+int const thresh_min = 3;
+int ADC_reading = 0;
 char state = 0;
 char send_confirm = 0;
 int speed = 10000;
@@ -30,17 +30,18 @@ int main(void){
 
     PM5CTL0 &= ~LOCKLPM5;
     P2IFG &= ~BIT3;                         // Clear P2.3 IFG
-    __bis_SR_register(LPM3_bits | GIE);     // Enter LPM3 w/ interrupts
+    __bis_SR_register(GIE);     // Enter LPM3 w/ interrupts
 
     while(1){
         switch(state){
         case 0:{ //read
             LEDSolid(); // Makes the LED Solid
             ADC_reading = ADCSingleRead(); // Single read from ADC and return its value
+            //ADC_reading = 12; //temp to cylce
+            __delay_cycles(3000000);         // Delay for 3000000*(1/MCLK)=3s
             if ((ADC_reading > thresh_min) && (ADC_reading < thresh_max)){
                 state = 1; // Set case to send case if the ADC_read value is within the threshold
             }
-            __delay_cycles(3000000);         // Delay for 3000000*(1/MCLK)=3s
             break;
         }
         case 1:{ //send
@@ -54,10 +55,11 @@ int main(void){
             send_confirm = 0; // Reset send_confirm
             LEDFast(); // Makes the led blink quickly
             ADC_reading = ADCSingleRead();
+            //ADC_reading = 20; //temp to cycle
+            __delay_cycles(3000000);          // Delay for 3000000*(1/MCLK)=3s
             if ((ADC_reading > thresh_max) && (ADC_reading < big_thresh_max)){
                 state = 0; // Drink is back, so send back to read state
             }
-            __delay_cycles(3000000);          // Delay for 3000000*(1/MCLK)=3s
             break;
         }
         }
@@ -102,11 +104,11 @@ void LEDSolid(){
 }
 
 void LEDSlow(){
-    speed = 1000; // Make sure the red led is on.
+    speed = 5000; // Make sure the red led is on.
 }
 
 void LEDFast(){
-    speed = 500; // temp
+    speed = 2500; // temp
 }
 
 void ADCInit(){
@@ -117,7 +119,7 @@ void ADCInit(){
     ADCMCTL0 |= ADCINCH_1;                                   // A5 ADC input select; Vref=AVCC
 }
 
-float ADCSingleRead(){
+int ADCSingleRead(){
     ADCCTL0 |= ADCENC | ADCSC; //Enable and start conversion
     while (!(ADCIFG & ADCIFG0));   // Wait for sample to be sampled and converted
     return ADCMEM0;
