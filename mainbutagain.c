@@ -11,14 +11,16 @@ int ADCSingleRead();
 //void SendRequest();
 //void ReceiveRequest();
 
-int const big_thresh_max = 1050; //highest resistor results in 1100
-int const thresh_max = 950; // mid resistor is 1000
-int const thresh_min = 800; // lowest resistor is 900
+int const big_thresh_max = 110;
+int const thresh_max = 45;
+int const thresh_min = 10;
 float initial_ADC = 0;
 int ADC_reading = 0;
 char state = 0;
 char send_confirm = 0;
 int speed = 10000;
+
+char button = 0;
 
 //main
 int main(void){
@@ -31,6 +33,7 @@ int main(void){
 
     PM5CTL0 &= ~LOCKLPM5;
     P2IFG &= ~BIT3;                         // Clear P2.3 IFG
+    P4IFG &= ~BIT1;                         // Clear P4.1 IFG
     __bis_SR_register(GIE);     // Enter LPM3 w/ interrupts
 
     while(1){
@@ -38,8 +41,7 @@ int main(void){
         case 0:{ //read
             LEDSolid(); // Makes the LED Solid
             initial_ADC = ADCSingleRead();
-            ADC_reading = initial_ADC * 100;
-            //ADC_reading = 12; //temp to cylce
+            //ADC_reading = initial_ADC * 100;
             __delay_cycles(3000000);         // Delay for 3000000*(1/MCLK)=3s
             if ((ADC_reading > thresh_min) && (ADC_reading < thresh_max)){
                 state = 1; // Set case to send case if the ADC_read value is within the threshold
@@ -57,8 +59,7 @@ int main(void){
             send_confirm = 0; // Reset send_confirm
             LEDFast(); // Makes the led blink quickly
             initial_ADC = ADCSingleRead();
-            ADC_reading = initial_ADC * 100;
-            //ADC_reading = 20; //temp to cycle
+            //ADC_reading = initial_ADC * 100;
             __delay_cycles(3000000);          // Delay for 3000000*(1/MCLK)=3s
             if ((ADC_reading > thresh_max) && (ADC_reading < big_thresh_max)){
                 state = 0; // Drink is back, so send back to read state
@@ -86,6 +87,10 @@ void GPIO(){
     P1SEL0 |= BIT1;                         // Select P1.1 as OA0O function
     P1SEL1 |= BIT1;                         // OA is used as buffer for DAC
 
+
+    P1SEL0 |= BIT5;   // ADC Port
+    P1SEL1 |= BIT5;
+
     P1OUT &= ~BIT7;   // Transmit Port
     P1DIR |= BIT7;
     P1OUT |= BIT6;    // Receive Port
@@ -96,6 +101,12 @@ void GPIO(){
     P2REN |= BIT3;                          // P2.3 pull-up register enable
     P2IES &= ~BIT3;                         // P2.3 Low --> High edge
     P2IE |= BIT3;                           // P2.3 interrupt enabled
+
+    // Configure Button on P4.1 as input with pullup resistor
+    P4OUT |= BIT1;                          // Configure P4.1 as pulled-up
+    P4REN |= BIT1;                          // P4.1 pull-up register enable
+    P4IES &= ~BIT1;                         // P4.1 Low --> High edge
+    P4IE |= BIT1;                           // P4.1 interrupt enabled
 }
 
 void timerInit(){
@@ -138,6 +149,31 @@ __interrupt void Port_2(void)
     P2IFG &= ~BIT3;                         // Clear P2.3 IFG
     if (state == 1){
         send_confirm = 1;
+    }
+}
+
+// Port 4 interrupt service routine
+#pragma vector=PORT4_VECTOR
+__interrupt void Port_4(void)
+{
+    P4IFG &= ~BIT1;                         // Clear P4.1 IFG
+    button++;
+    if (button == 4){
+        button = 1;
+    }
+    switch (button){
+        case 1:{
+            ADC_reading = 100;
+            break;
+        }
+        case 2:{
+            ADC_reading = 30;
+            break;
+        }
+        case 3:{
+            ADC_reading = 120;
+            break;
+        }
     }
 }
 
