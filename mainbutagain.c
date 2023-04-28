@@ -50,6 +50,8 @@ int main(void){
         }
         case 1:{ //send
             LEDSlow(); // Makes the LED blink slowly
+            //void SendRequest(); // Sends a signal through the wifi module to the kitchen terminal
+            //void ReceiveRequest(); // Tests to see if the kitchen has signified that they're sending a refill
             if (send_confirm){
                 state = 2;     // If the waiter confirms the send by hitting 2.3, swap to receive state
             }
