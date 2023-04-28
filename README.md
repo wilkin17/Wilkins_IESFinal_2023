@@ -12,7 +12,7 @@ The drink level is determined by a force sensing resistor underneath the coaster
 that value through an MSP430FR2355 microcontroller through its ADC port. The weight values 
 are calibrated for each restaurant's cup sizes. 
 
-**There are three threshold values:
+**There are three threshold values:**
 
 thresh_min - The lowest possible value the program will interpret as a "cup," so that the
 program doesn't try to change states when nothing is on the coaster.
@@ -26,7 +26,7 @@ higher and it means that it's likely that someone in just pressing down on the c
 the ADC reads a value between the thresh_max and big_thresh_max, it knows that the cup on it
 still has plenty liquid inside.
 
-**The program has three states:
+**The program has three states:**
 
 The read state - This is the state the program spends the most time in. Every three seconds,
 it takes a weight reading of the coaster to determine the drink level. The LED on the coaster
